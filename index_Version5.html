@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Pencilsmith — Upgrades Organized</title>
+  <style>
+    /* Retro / Early-Internet look: beveled panels, monospace fonts, 3D buttons */
+    :root{
+      --bg: #c0c0c0;
+      --panel: #ffffff;
+      --border-dark: #404040;
+      --border-light: #ffffff;
+      --accent: #00707a;
+      --muted: #333;
+      --danger: #a00000;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background:var(--bg);
+      font-family: "Courier New", Courier, monospace;
+      color:var(--muted);
+      padding:12px;
+      font-size:13px;
+      line-height:1.2;
+    }
+    #console-bar{
+      background:#000;
+      color:#66ff66;
+      font-family: "Lucida Console", Monaco, monospace;
+      padding:6px 10px;
+      border:2px solid var(--border-dark);
+      border-bottom-width:1px;
+      margin-bottom:10px;
+      height:46px;
+      overflow:hidden;
+      box-shadow: 3px 3px 0 rgba(0,0,0,0.2);
+    }
+    #console-bar pre{margin:0;font-size:12px;line-height:1.1}
+    .retro-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:8px;
+      border:2px outset var(--border-light);
+      background: linear-gradient(180deg,#e0f4f4,#d8f0f0);
+      margin-bottom:8px;
+    }
+    .site-title h1{margin:0;font-size:20px;color:var(--accent);letter-spacing:1px;text-transform:uppercase}
+    .site-title .subtitle{font-size:11px;color:#333;margin-top:2px}
+    .big-counter{background:linear-gradient(#fff,#eaeaea);padding:8px 12px;border:2px solid var(--border-dark);font-weight:bold;font-family:"Courier New",monospace}
+    .marquee-wrap{margin:6px 0 10px 0; font-size:12px; color:#111}
+    .columns{display:grid;grid-template-columns: 1fr 420px;gap:12px;align-items:start}
+    .panel{background:var(--panel);padding:10px;border:2px solid var(--border-dark);position:relative;font-family:"Courier New",monospace}
+    .bevel{box-shadow: inset 2px 2px 0 var(--border-dark), inset -2px -2px 0 var(--border-light)}
+    .panel-title{font-weight:bold;margin:0 0 8px 0;font-size:14px}
+    .panel-sub{font-size:13px;margin:8px 0 6px 0}
+    .row{display:flex;gap:12px}
+    .factory-col{flex:1}
+    .label{font-weight:bold}
+    .small{font-size:11px;color:#444;margin-bottom:6px}
+    .upgrade-list{margin-top:6px}
+    .upgrade{border:2px inset var(--border-light);background:linear-gradient(#fff,#f4f4f4);padding:8px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;font-size:12px}
+    .upgrade.locked{opacity:0.6}
+    .upgrade.small{padding:6px;font-size:12px}
+    .section-title{font-weight:bold;margin:8px 0 6px 0;border-bottom:1px dashed #999;padding-bottom:6px}
+    .dotted-hr{border:none;border-top:2px dotted #999;margin:8px 0}
+    .project{padding:8px;border:2px solid #999;background:#fafafa;margin-bottom:6px}
+    .retro-btn{display:inline-block;padding:6px 10px;font-weight:bold;background:linear-gradient(#e9e9e9,#cfcfcf);color:#000;border-top:2px solid var(--border-light);border-left:2px solid var(--border-light);border-bottom:2px solid var(--border-dark);border-right:2px solid var(--border-dark);cursor:pointer;font-family:"Courier New",monospace;margin-top:6px}
+    .retro-btn:active{border-top:2px solid var(--border-dark);border-left:2px solid var(--border-dark);border-bottom:2px solid var(--border-light);border-right:2px solid var(--border-light);transform:translateY(1px)}
+    .primary{background:linear-gradient(#d6f2f2,#bfecec);color:#023;border-color:#fff #fff #404040 #404040}
+    .retro-btn.danger{background:#f3d6d6;color:#700}
+    footer{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+    .muted{color:#666;font-size:12px}
+    @media (max-width:900px){ .columns{grid-template-columns: 1fr} .right{order:2} }
+  </style>
+</head>
+<body>
+  <div id="console-bar" role="log" aria-live="polite">
+    <pre id="console-text">. System ready. Welcome to Pencilsmith v1.1
+. Upgrades grouped for convenience — enjoy!</pre>
+  </div>
+
+  <header class="retro-header">
+    <div class="site-title">
+      <h1>Pencilsmith</h1>
+      <div class="subtitle">handmade pencils since 1996</div>
+    </div>
+    <div id="pencil-count" class="big-counter">Pencils: <span id="pencils">0</span></div>
+  </header>
+
+  <div class="marquee-wrap"><marquee behavior="scroll" scrollamount="3">New: Upgrades organized into Starter, Manufacturing, Automation, Business, Research and Legendary sections.</marquee></div>
+
+  <main class="columns">
+    <section class="left">
+      <div class="panel bevel">
+        <button id="make-pencil" class="primary retro-btn">Make Pencil</button>
+        <div class="stats retro-text">
+          <div>Inventory: <span id="inventory">0</span></div>
+          <div>Funds: $<span id="funds">0.00</span></div>
+          <div>Pencils/sec: <span id="per-sec">0</span></div>
+        </div>
+      </div>
+
+      <div class="panel bevel">
+        <h2 class="panel-title">Manufacturing</h2>
+        <div class="row">
+          <div class="factory-col">
+            <div class="label">Factory Workers: <span id="workers">0</span></div>
+            <div class="small">Cost: $<span id="worker-cost">10.00</span> each</div>
+            <button id="buy-worker" class="retro-btn">Hire Worker</button>
+          </div>
+          <div class="factory-col">
+            <div class="label">Auto-Sharpeners: <span id="sharpeners">0</span></div>
+            <div class="small">Cost: $<span id="sharpen-cost">75.00</span> each</div>
+            <button id="buy-sharpener" class="retro-btn">Buy Auto-Sharpener</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel bevel">
+        <h2 class="panel-title">Business</h2>
+        <div class="label">Price per Pencil: $<span id="price">0.10</span></div>
+        <div class="label">Demand: <span id="demand">100%</span></div>
+        <div class="shop retro-buttons">
+          <button id="sell-pencils" class="retro-btn">Sell Inventory</button>
+          <button id="lower-price" class="retro-btn">Lower Price</button>
+          <button id="raise-price" class="retro-btn">Raise Price</button>
+        </div>
+      </div>
+    </section>
+
+    <aside class="right">
+      <div class="panel bevel">
+        <h2 class="panel-title">Resources & Upgrades</h2>
+        <div id="resources" class="retro-text">
+          <div>Creativity: <span id="creativity">0</span></div>
+          <div>Reputation: <span id="reputation">0</span></div>
+        </div>
+        <hr class="dotted-hr">
+        <div id="upgrades" class="upgrade-list"></div>
+      </div>
+
+      <div class="panel bevel">
+        <h2 class="panel-title">Projects</h2>
+        <div id="projects" class="projects-col">
+          <div class="project locked" data-cost="1000">Design Studio — unlocks new upgrades (1,000 pencils)</div>
+          <div class="project locked" data-cost="10000">Brand Campaign — doubles demand (10,000)</div>
+          <div class="project locked" data-cost="100000">Factory Expansion — +workers cap (100,000)</div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <footer>
+    <div class="footer-left muted">Autosave: localStorage • Classic UI</div>
+    <div class="footer-right">
+      <button id="reset" class="retro-btn danger">Reset</button>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      const state = {
+        pencils: 0,
+        inventory: 0,
+        funds: 0.0,
+        price: 0.10,
+        demand: 1.0,
+        perClick: 1,
+        perSec: 0,
+        workers: 0,
+        sharpeners: 0,
+        creativity: 0,
+        reputation: 0,
+        lastTick: Date.now()
+      };
+
+      // Upgrades grouped by section. Add/remove or tune as desired.
+      const upgrades = [
+        // Starter
+        { id: 'better-wood', name: 'Better Wood', section: 'Starter', desc: '+1 Pencil per click', cost: 50, unlockedAt: 25, bought: false, apply: () => { state.perClick += 1 } },
+        { id: 'efficient-hands', name: 'Efficient Hands', section: 'Starter', desc: '+10% click speed (flavor)', cost: 150, unlockedAt: 75, bought: false, apply: () => { /* cosmetic */ } },
+        { id: 'sturdy-leads', name: 'Sturdy Leads', section: 'Starter', desc: '+0.5 pencils/sec passive', cost: 300, unlockedAt: 150, bought: false, apply: () => { state.perSec += 0.5 } },
+
+        // Manufacturing
+        { id: 'mass-production', name: 'Mass Production', section: 'Manufacturing', desc: 'Workers produce +50% pencils', cost: 1000, unlockedAt: 500, bought: false, apply: () => { state.workerBoost = (state.workerBoost||1) * 1.5 } },
+        { id: 'assembly-line', name: 'Assembly Line', section: 'Manufacturing', desc: 'Workers production +100%', cost: 5000, unlockedAt: 2500, bought: false, apply: () => { state.workerBoost = (state.workerBoost||1) * 2 } },
+        { id: 'bulk-wood', name: 'Bulk Wood Supply', section: 'Manufacturing', desc: 'Reduce worker cost by 25%', cost: 20000, unlockedAt: 12000, bought: false, apply: () => { state.workerCostMultiplier = (state.workerCostMultiplier||1) * 0.75 } },
+
+        // Automation
+        { id: 'sharper-leads', name: 'Sharper Leads', section: 'Automation', desc: 'Auto-sharpeners 2x effective', cost: 200, unlockedAt: 100, bought: false, apply: () => { state.sharpenerPowerMultiplier = (state.sharpenerPowerMultiplier||1) * 2 } },
+        { id: 'automation-suite', name: 'Automation Suite', section: 'Automation', desc: 'Sharpeners produce while offline', cost: 200000, unlockedAt: 100000, bought: false, apply: () => { state.automation = true } },
+        { id: 'robot-factory', name: 'Robot Factory', section: 'Automation', desc: 'Adds large passive production', cost: 2000000, unlockedAt: 1000000, bought: false, apply: () => { state.robotFactory = true; state.perSec += 1000 } },
+
+        // Business / Marketing
+        { id: 'eco-brand', name: 'Eco Brand', section: 'Business', desc: 'Demand +20%', cost: 2500, unlockedAt: 2000, bought: false, apply: () => { state.demand *= 1.2 } },
+        { id: 'marketing-hub', name: 'Marketing Hub', section: 'Business', desc: 'Sell price +10%', cost: 10000, unlockedAt: 7000, bought: false, apply: () => { state.price *= 1.10 } },
+        { id: 'global-distribution', name: 'Global Distribution', section: 'Business', desc: 'Demand +200%', cost: 1000000, unlockedAt: 500000, bought: false, apply: () => { state.demand *= 3 } },
+
+        // Research
+        { id: 'design-studio', name: 'Design Studio', section: 'Research', desc: 'Gain Creativity per second', cost: 5000, unlockedAt: 1500, bought: false, apply: () => { state.creativityRate = (state.creativityRate||0) + 1 } },
+        { id: 'reputation-campaign', name: 'Reputation Campaign', section: 'Research', desc: 'Reputation boosts price slightly', cost: 25000, unlockedAt: 8000, bought: false, apply: () => { state.reputationBoost = (state.reputationBoost||1) * 1.05 } },
+        { id: 'microlattice', name: 'Microlattice Supply', section: 'Research', desc: 'Sharpeners give +50% more', cost: 80000, unlockedAt: 40000, bought: false, apply: () => { state.sharpenerPowerMultiplier = (state.sharpenerPowerMultiplier||1) * 1.5 } },
+
+        // Legendary
+        { id: 'luxury-graphite', name: 'Luxury Graphite', section: 'Legendary', desc: 'Price +50% for premium pencils', cost: 500000, unlockedAt: 200000, bought: false, apply: () => { state.price *= 1.5 } },
+        { id: 'pencil-collective', name: 'Pencil Collective', section: 'Legendary', desc: 'Workers produce +100%', cost: 120000, unlockedAt: 50000, bought: false, apply: () => { state.workerBoost = (state.workerBoost||1) * 2 } },
+        { id: 'founders-legacy', name: 'Founders Legacy', section: 'Legendary', desc: 'Permanent +5% production multiplier', cost: 5000000, unlockedAt: 2000000, bought: false, apply: () => { state.globalProdMult = (state.globalProdMult||1) * 1.05 } }
+      ];
+
+      // get DOM refs
+      function $id(id) { return document.getElementById(id); }
+      const pencilsEl = $id('pencils');
+      const inventoryEl = $id('inventory');
+      const fundsEl = $id('funds');
+      const perSecEl = $id('per-sec');
+      const priceEl = $id('price');
+      const demandEl = $id('demand');
+      const workersEl = $id('workers');
+      const sharpenersEl = $id('sharpeners');
+      const upgradesEl = $id('upgrades');
+      const creativityEl = $id('creativity');
+      const reputationEl = $id('reputation');
+
+      // attach UI handlers safely
+      function setupUI() {
+        const makeBtn = $id('make-pencil');
+        if (makeBtn) {
+          makeBtn.addEventListener('click', () => {
+            state.pencils += state.perClick;
+            state.inventory += state.perClick;
+            render();
+          });
+        }
+        const buyWorker = $id('buy-worker');
+        if (buyWorker) buyWorker.addEventListener('click', () => {
+          const base = 10.0;
+          const multiplier = state.workerCostMultiplier || 1;
+          const cost = base * Math.pow(1.15, state.workers) * multiplier;
+          if (state.funds >= cost) { state.funds -= cost; state.workers += 1; render(); }
+        });
+        const buySharp = $id('buy-sharpener');
+        if (buySharp) buySharp.addEventListener('click', () => {
+          const cost = 75 * Math.pow(1.2, state.sharpeners);
+          if (state.funds >= cost) { state.funds -= cost; state.sharpeners += 1; render(); }
+        });
+        const sellBtn = $id('sell-pencils');
+        if (sellBtn) sellBtn.addEventListener('click', () => {
+          const sold = state.inventory;
+          if (sold <= 0) return;
+          const revenue = sold * state.price * state.demand;
+          state.funds += revenue;
+          state.inventory = 0;
+          state.reputation += Math.floor(sold / 100);
+          render();
+        });
+        const raise = $id('raise-price');
+        if (raise) raise.addEventListener('click', () => { state.price = +(state.price + 0.01).toFixed(2); render(); });
+        const lower = $id('lower-price');
+        if (lower) lower.addEventListener('click', () => { state.price = Math.max(0.01, +(state.price - 0.01).toFixed(2)); render(); });
+        const resetBtn = $id('reset');
+        if (resetBtn) resetBtn.addEventListener('click', () => {
+          if (confirm('Reset game and clear local save?')) {
+            try { localStorage.removeItem('pencilsmith-save'); } catch(e){}
+            location.reload();
+          }
+        });
+      }
+
+      // render grouped upgrades
+      function renderUpgrades() {
+        if (!upgradesEl) return;
+        upgradesEl.innerHTML = '';
+        // determine unique sections and keep an ordering
+        const sectionsOrder = ['Starter', 'Manufacturing', 'Automation', 'Business', 'Research', 'Legendary'];
+        const sections = {};
+        for (const upg of upgrades) {
+          if (!sections[upg.section]) sections[upg.section] = [];
+          sections[upg.section].push(upg);
+        }
+
+        sectionsOrder.forEach(sectionName => {
+          const list = sections[sectionName];
+          if (!list) return;
+          // section header
+          const header = document.createElement('div');
+          header.className = 'section-title';
+          header.textContent = sectionName;
+          upgradesEl.appendChild(header);
+          // items
+          list.forEach(u => {
+            const unlocked = state.pencils >= u.unlockedAt;
+            const div = document.createElement('div');
+            div.className = 'upgrade' + (unlocked ? (u.bought ? ' bought' : '') : ' locked');
+            div.innerHTML = '<div style="max-width:260px"><strong>' + u.name + '</strong><div style="font-size:12px;color:#666;margin-top:4px">' + u.desc + '</div><div style="font-size:11px;color:#888;margin-top:6px">Unlock at ' + u.unlockedAt.toLocaleString() + ' • Cost: $' + u.cost.toLocaleString() + '</div></div>';
+            const btn = document.createElement('button');
+            btn.className = 'retro-btn';
+            btn.textContent = u.bought ? 'Purchased' : (unlocked ? 'Buy' : 'Locked');
+            btn.disabled = (!unlocked || u.bought || state.funds < u.cost);
+            btn.addEventListener('click', () => {
+              if (!unlocked || u.bought) return;
+              if (state.funds >= u.cost) {
+                state.funds -= u.cost;
+                u.bought = true;
+                try { u.apply(); } catch (e) { /* ignore */ }
+                render();
+              }
+            });
+            div.appendChild(btn);
+            upgradesEl.appendChild(div);
+          });
+        });
+      }
+
+      // game tick logic
+      function gameTick(deltaSec) {
+        const baseWorkerRate = 1;
+        const workerBoost = state.workerBoost || 1;
+        const globalMult = state.globalProdMult || 1;
+        const workerPencils = state.workers * baseWorkerRate * workerBoost * globalMult;
+        const sharpenerBase = 5;
+        const sharpenerPower = (state.sharpenerPowerMultiplier || 1);
+        const sharpenerPencils = state.sharpeners * sharpenerBase * sharpenerPower * globalMult;
+        const automationBonus = state.automation ? sharpenerPencils * 0.5 : 0;
+        const perSec = (workerPencils + sharpenerPencils + (state.robotFactory ? 1000 : 0)) * (1 + ((state.reputationBoost||0) ? (state.reputationBoost-1) : 0));
+        state.perSec = perSec;
+        const produced = perSec * deltaSec + automationBonus * deltaSec;
+        state.inventory += produced;
+        state.pencils += produced;
+        state.creativity += (produced / 100) * deltaSec;
+        state.reputation += (produced / 1000) * deltaSec;
+        if (state.creativityRate) { state.funds += state.creativityRate * deltaSec * 0.5; }
+      }
+
+      // render to DOM
+      function render() {
+        if (pencilsEl) pencilsEl.textContent = Math.floor(state.pencils).toLocaleString();
+        if (inventoryEl) inventoryEl.textContent = Math.floor(state.inventory).toLocaleString();
+        if (fundsEl) fundsEl.textContent = state.funds.toFixed(2);
+        if (perSecEl) perSecEl.textContent = state.perSec.toFixed(1);
+        if (priceEl) priceEl.textContent = state.price.toFixed(2);
+        if (demandEl) demandEl.textContent = (state.demand * 100).toFixed(0) + '%';
+        if (workersEl) workersEl.textContent = state.workers;
+        if (sharpenersEl) sharpenersEl.textContent = state.sharpeners;
+        if (creativityEl) creativityEl.textContent = Math.floor(state.creativity);
+        if (reputationEl) reputationEl.textContent = Math.floor(state.reputation);
+
+        // costs
+        const workerBase = 10.0;
+        const wCost = workerBase * Math.pow(1.15, state.workers) * (state.workerCostMultiplier||1);
+        const wCostEl = $id('worker-cost');
+        if (wCostEl) wCostEl.textContent = wCost.toFixed(2);
+        const sharpCost = 75 * Math.pow(1.2, state.sharpeners);
+        const sCostEl = $id('sharpen-cost');
+        if (sCostEl) sCostEl.textContent = sharpCost.toFixed(2);
+
+        renderUpgrades();
+        save();
+      }
+
+      // save/load
+      function save() {
+        try {
+          const payload = { state, upgrades: upgrades.map(u => ({ id: u.id, bought: u.bought })) };
+          localStorage.setItem('pencilsmith-save', JSON.stringify(payload));
+        } catch (e) { /* ignore storage errors */ }
+      }
+      function load() {
+        try {
+          const raw = localStorage.getItem('pencilsmith-save');
+          if (!raw) return;
+          const data = JSON.parse(raw);
+          if (data.state) Object.assign(state, data.state);
+          if (data.upgrades) {
+            data.upgrades.forEach(saved => {
+              const u = upgrades.find(x => x.id === saved.id);
+              if (u && saved.bought) {
+                u.bought = true;
+                try { u.apply(); } catch (e) { /* ignore */ }
+              }
+            });
+          }
+        } catch (e) { /* ignore parse errors */ }
+      }
+
+      // main loop
+      function loop() {
+        const now = Date.now();
+        const delta = (now - state.lastTick) / 1000.0;
+        state.lastTick = now;
+        gameTick(delta);
+        render();
+        requestAnimationFrame(loop);
+      }
+
+      // init
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+
+      function init() {
+        setupUI();
+        load();
+        render();
+        state.lastTick = Date.now();
+        requestAnimationFrame(loop);
+        window._pencilsmith = { state, upgrades }; // debugging
+      }
+    })();
+  </script>
+</body>
+</html>
