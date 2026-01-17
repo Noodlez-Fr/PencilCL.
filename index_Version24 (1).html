@@ -1,0 +1,1045 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Pencilsmith — Ascension, Achievements & Total Produced</title>
+  <style>
+    /* Classic retro UI (beveled panels, monospace) */
+    :root{
+      --bg: #c0c0c0;
+      --panel: #ffffff;
+      --border-dark: #404040;
+      --border-light: #ffffff;
+      --accent: #00707a;
+      --muted: #333;
+      --marquee-bg: #f2f8f8;
+      --accent-2: #b06;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background:var(--bg);
+      font-family: "Courier New", Courier, monospace;
+      color:var(--muted);
+      padding:12px;
+      font-size:13px;
+      line-height:1.2;
+    }
+
+    /* Console bar */
+    #console-bar{
+      background:#000;
+      color:#66ff66;
+      font-family: "Lucida Console", Monaco, monospace;
+      padding:6px 10px;
+      border:2px solid var(--border-dark);
+      border-bottom-width:1px;
+      margin-bottom:10px;
+      height:46px;
+      overflow:hidden;
+      display:flex;
+      align-items:center;
+    }
+    #console-bar pre{margin:0;font-size:12px;line-height:1.1}
+
+    /* Header */
+    .retro-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:8px;
+      border:2px outset var(--border-light);
+      background: linear-gradient(180deg,#e0f4f4,#d8f0f0);
+      margin-bottom:8px;
+    }
+    .site-title h1{margin:0;font-size:20px;color:var(--accent);letter-spacing:1px;text-transform:uppercase}
+    .site-title .subtitle{font-size:11px;color:#333;margin-top:2px}
+    .big-counter{background:linear-gradient(#fff,#eaeaea);padding:8px 12px;border:2px solid var(--border-dark);font-weight:bold;font-family:"Courier New",monospace}
+
+    /* Floating message */
+    .marquee-wrap {
+      margin:6px 0 10px 0;
+      font-size:12px;
+      color:#111;
+      height:26px;
+      display:flex;
+      align-items:center;
+      background: linear-gradient(180deg,var(--marquee-bg),#e6efef);
+      border:1px solid #c6dedf;
+      padding:4px 8px;
+      border-radius:4px;
+      overflow:hidden;
+      position:relative;
+    }
+    #floating-message {
+      white-space:nowrap;
+      display:inline-block;
+      transform:translateX(0);
+      transition: opacity .25s ease, transform .75s cubic-bezier(.2,.9,.2,1);
+      font-family: "Courier New", monospace;
+      font-size:13px;
+      color:#073;
+      cursor:pointer;
+      user-select:none;
+    }
+    #floating-message.paused { color:#777; }
+
+    /* Layout */
+    .columns{display:grid;grid-template-columns: 1fr 420px;gap:12px;align-items:start}
+    .panel{background:var(--panel);padding:10px;border:2px solid var(--border-dark);position:relative;font-family:"Courier New",monospace}
+    .bevel{box-shadow: inset 2px 2px 0 var(--border-dark), inset -2px -2px 0 var(--border-light)}
+    .panel-title{font-weight:bold;margin:0 0 8px 0;font-size:14px}
+    .panel-sub{font-size:13px;margin:8px 0 6px 0}
+    .row{display:flex;gap:12px}
+    .factory-col{flex:1}
+    .label{font-weight:bold}
+    .small{font-size:11px;color:#444;margin-bottom:6px}
+
+    /* Upgrades */
+    .upgrade-list{margin-top:6px; max-height:380px; overflow:auto; padding-right:6px}
+    .upgrade{border:2px inset var(--border-light);background:linear-gradient(#fff,#f4f4f4);padding:8px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;font-size:12px}
+    .upgrade.locked{opacity:0.6}
+    .section-title{font-weight:bold;margin:8px 0 6px 0;border-bottom:1px dashed #999;padding-bottom:6px}
+    .upgrade-controls{display:flex;gap:6px;align-items:center}
+
+    /* Buttons */
+    .retro-btn{display:inline-block;padding:6px 10px;font-weight:bold;background:linear-gradient(#e9e9e9,#cfcfcf);color:#000;border-top:2px solid var(--border-light);border-left:2px solid var(--border-light);border-bottom:2px solid var(--border-dark);border-right:2px solid var(--border-dark);cursor:pointer;font-family:"Courier New",monospace;margin-top:6px}
+    .retro-btn:active{border-top:2px solid var(--border-dark);border-left:2px solid var(--border-dark);border-bottom:2px solid var(--border-light);border-right:2px solid var(--border-light);transform:translateY(1px)}
+    .primary{background:linear-gradient(#d6f2f2,#bfecec);color:#023;border-color:#fff #fff #404040 #404040}
+    .retro-btn.danger{background:#f3d6d6;color:#700}
+    .buy-max{font-size:11px;padding:6px;border:1px solid #999;background:#eee;cursor:pointer}
+
+    /* Achievement list */
+    .achievements { margin-top:10px; max-height:260px; overflow:auto; border-top:1px dashed #ddd; padding-top:6px }
+    .ach { display:flex; gap:10px; align-items:center; padding:6px; border-bottom:1px dotted #eee; }
+    .ach .badge { width:18px; height:18px; border-radius:4px; display:inline-flex; align-items:center; justify-content:center; font-size:11px; color:#fff; background:#bbb }
+    .ach.unlocked .badge { background:var(--accent) }
+
+    /* Total produced progress */
+    .progress { height:10px; background:#eee; border:1px solid #ccc; border-radius:6px; overflow:hidden; margin-top:6px }
+    .progress > i { display:block; height:100%; background: linear-gradient(90deg,#7ad,#3a8); width:0%; transition:width 300ms linear }
+
+    /* Ranks area */
+    .ranks { margin-top:10px; border:2px inset var(--border-light); background:linear-gradient(#fff,#f9f9f9); padding:8px }
+    .rank { display:flex; justify-content:space-between; align-items:center; padding:6px; border-bottom:1px dashed #ddd; font-size:13px }
+    .rank:last-child { border-bottom: none; }
+    .rank .rank-left { max-width:260px }
+    .rank .rank-controls { display:flex; gap:8px; align-items:center }
+
+    footer{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+    .muted{color:#666;font-size:12px}
+
+    /* Flying pencil area */
+    #pencil-sky {
+      position: relative;
+      width: 100%;
+      height: 140px;
+      background: linear-gradient(#e6e6e6, #d1d1d1);
+      overflow: hidden;
+      border: 2px solid #999;
+      box-shadow: inset 2px 2px 0 #666, inset -2px -2px 0 #fff;
+      margin-bottom: 8px;
+    }
+    .pencil-instance { position:absolute; pointer-events:none; will-change:transform,opacity }
+    .pencil-instance .flying-pencil { animation: pencilBob 1.6s ease-in-out infinite }
+    @keyframes pencilFly { 0%{transform:translateX(-30vw) translateY(-20px) rotate(-12deg) scale(0.9);opacity:0}8%{opacity:1}40%{transform:translateX(18vw) translateY(-40px) rotate(-6deg) scale(1)}70%{transform:translateX(60vw) translateY(10px) rotate(4deg) scale(1.03)}100%{transform:translateX(120vw) translateY(40px) rotate(12deg) scale(1.05);opacity:0} }
+    @keyframes pencilBob {0%{transform:translateY(0)}50%{transform:translateY(-4px)}100%{transform:translateY(0)}}
+
+    @media (max-width:900px){ .columns{grid-template-columns: 1fr} .right{order:2} }
+  </style>
+</head>
+<body>
+  <div id="console-bar" role="log" aria-live="polite">
+    <pre id="console-text">. Pencilsmith — Ascension & Achievements added</pre>
+  </div>
+
+  <header class="retro-header">
+    <div class="site-title">
+      <h1>Pencilsmith</h1>
+      <div class="subtitle">handmade pencils since 1996</div>
+      <div class="subtitle made-by" style="font-size:11px; margin-top:4px; font-style:italic;">made by NXD!</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+      <div class="big-counter">Pencils: <span id="pencils">0</span></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button id="ascend-btn" class="retro-btn" title="Ascend (prestige) to earn Ascension Points">Ascend</button>
+        <div style="font-size:12px;color:#333">Ascension pts: <strong id="ascension-points">0</strong></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="marquee-wrap" title="Click to pause/resume">
+    <div id="floating-message" aria-live="polite" role="status">Dynamic updates and achievements live.</div>
+  </div>
+
+  <main class="columns">
+    <section class="left">
+      <div class="panel bevel">
+        <div id="pencil-sky" aria-hidden="true">
+          <svg id="prototype-pencil" class="flying-pencil" viewBox="0 0 120 24" width="160" height="36" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Flying pencil" style="display:none">
+            <g>
+              <rect x="12" y="4" width="74" height="10" rx="2" fill="#f2c94c" stroke="#8a5f2d" stroke-width="1"/>
+              <rect x="86" y="4" width="12" height="10" rx="1" fill="#e0e0e0" stroke="#9a9a9a" stroke-width="0.8"/>
+              <polygon points="98,8 112,2 116,6 102,12" fill="#d87e4a" stroke="#8a4e2a" stroke-width="0.6"/>
+            </g>
+          </svg>
+        </div>
+
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <div style="flex:1">
+            <button id="make-pencil" class="primary retro-btn" style="font-size:15px;padding:10px 12px">Make Pencil</button>
+            <div style="margin-top:8px" class="small">Click to craft pencils. Inventory + Total Produced track progress for unlocks, achievements & ascension.</div>
+
+            <div style="margin-top:10px">
+              <div class="small">Total Produced</div>
+              <div style="font-weight:bold;font-size:16px" id="total-produced-display">0</div>
+              <div class="progress" title="Progress to next Ascension Point">
+                <i id="asc-progress-bar" style="width:0%"></i>
+              </div>
+              <div class="small" id="asc-progress-text">0 / 1,000,000 towards next ascension point</div>
+            </div>
+          </div>
+
+          <div style="width:240px">
+            <div class="small">Inventory: <strong id="inventory">0</strong></div>
+            <div class="small">Funds: $<strong id="funds">0.00</strong></div>
+            <div style="margin-top:8px">
+              <button id="sell-pencils" class="retro-btn">Sell Inventory</button>
+              <button id="sell-half" class="retro-btn">Sell 50%</button>
+            </div>
+            <div style="margin-top:8px" class="small">Price: $<span id="price">0.10</span> • Demand: <span id="demand">100%</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel bevel" style="margin-top:10px">
+        <h2 class="panel-title">Manufacturing</h2>
+        <div class="row">
+          <div class="factory-col">
+            <div class="label">Factory Workers: <span id="workers">0</span></div>
+            <div class="small">Cost: $<span id="worker-cost">10.00</span> each</div>
+            <button id="buy-worker" class="retro-btn">Hire Worker</button>
+          </div>
+          <div class="factory-col">
+            <div class="label">Auto-Sharpeners: <span id="sharpeners">0</span></div>
+            <div class="small">Cost: $<span id="sharpen-cost">75.00</span> each</div>
+            <button id="buy-sharpener" class="retro-btn">Buy Auto-Sharpener</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel bevel" style="margin-top:10px">
+        <h2 class="panel-title">Stats</h2>
+        <div class="small">Pencils/sec: <span id="per-sec">0</span></div>
+        <div class="small">Total Produced: <span id="total-pencils">0</span></div>
+        <div class="small">Creativity: <span id="creativity">0</span> • Reputation: <span id="reputation">0</span></div>
+      </div>
+
+      <!-- Ranks & Ascension perks panel -->
+      <div class="panel bevel" id="ranks-panel" style="margin-top:10px">
+        <h2 class="panel-title">Ranks & Ascension Perks</h2>
+        <div class="small">Ranks boost production. Ascend to earn Ascension Points (1 point per 1,000,000 total produced). Spend points on permanent perks.</div>
+        <div id="ranks" class="ranks" aria-live="polite"></div>
+
+        <div style="margin-top:8px">
+          <h3 style="margin:6px 0 4px 0">Ascension Shop</h3>
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+            <div class="small">Ascension Points: <strong id="asc-points-display">0</strong></div>
+          </div>
+          <div id="asc-perks"></div>
+        </div>
+      </div>
+
+    </section>
+
+    <aside class="right">
+      <div class="panel bevel">
+        <h2 class="panel-title">Resources & Upgrades</h2>
+        <div id="resources" class="small" style="margin-bottom:8px">
+          Wood: <span id="wood">0</span> • Graphite: <span id="graphite">0</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+          <label class="small">Bulk</label>
+          <select id="bulk-qty" class="retro-btn" style="padding:4px 6px">
+            <option value="1">x1</option>
+            <option value="5">x5</option>
+            <option value="10">x10</option>
+            <option value="max">Max</option>
+          </select>
+          <div style="margin-left:auto;font-size:12px;color:#666">Unlocks use Total Produced</div>
+        </div>
+
+        <div id="upgrades" class="upgrade-list"></div>
+
+        <div style="margin-top:8px">
+          <h3 style="margin:6px 0 4px 0">Achievements</h3>
+          <div class="achievements" id="achievements"></div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <footer>
+    <div class="footer-left muted">Autosave: localStorage • Classic look</div>
+    <div class="footer-right">
+      <button id="reset" class="retro-btn danger">Reset</button>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      'use strict';
+
+      /* ======================
+         Game state
+         ====================== */
+      const state = {
+        pencils: 0,
+        inventory: 0,
+        totalPencils: 0,          // cumulative (used for unlocks & ascension)
+        funds: 0.0,
+        price: 0.10,
+        demand: 1.0,
+        perClick: 1,
+        perSec: 0,
+        workers: 0,
+        sharpeners: 0,
+        creativity: 0,
+        reputation: 0,
+        globalProdMult: 1,
+        // Ascension
+        ascensionCount: 0,
+        ascensionPoints: 0,        // spendable points
+        ascensionTotalEarned: 0,   // floor(totalPencils / 1e6) previously earned (prevents double-earning)
+        // persistence
+        lastTick: Date.now()
+      };
+
+      /* ======================
+         Upgrades (funds)
+         ====================== */
+      const upgrades = [
+        { id:'better-wood', name:'Better Wood', section:'Starter', desc:'+1 per click', baseCost:50, costScale:1.15, unlockedAt: 0, count:0, max:0, apply(){ state.perClick += 1 } },
+        { id:'sturdy-leads', name:'Sturdy Leads', section:'Starter', desc:'+0.5 pencils/sec', baseCost:300, costScale:1.12, unlockedAt:150, count:0, max:0, apply(){ state.perSec += 0.5 } },
+        { id:'mass-production', name:'Mass Production', section:'Manufacturing', desc:'Workers production +20% (stackable)', baseCost:1000, costScale:1.18, unlockedAt:500, count:0, max:0, apply(){ state.workerBoost = (state.workerBoost||1) * 1.2 } },
+        { id:'assembly-line', name:'Assembly Line', section:'Manufacturing', desc:'Workers production +50%', baseCost:5000, costScale:1.18, unlockedAt:2500, count:0, max:0, apply(){ state.workerBoost = (state.workerBoost||1) * 1.5 } },
+        { id:'automation-suite', name:'Automation Suite', section:'Automation', desc:'Sharpeners produce while offline (one-time)', baseCost:200000, costScale:1.00, unlockedAt:100000, count:0, max:1, apply(){ state.automation = true } },
+        { id:'eco-brand', name:'Eco Brand', section:'Business', desc:'Demand +5% (stackable)', baseCost:2500, costScale:1.16, unlockedAt:2000, count:0, max:0, apply(){ state.demand *= 1.05 } },
+        { id:'marketing-hub', name:'Marketing Hub', section:'Business', desc:'Sell price +5% (stackable)', baseCost:10000, costScale:1.15, unlockedAt:7000, count:0, max:0, apply(){ state.price *= 1.05 } },
+        { id:'design-studio', name:'Design Studio', section:'Research', desc:'Generate small funds from creativity (per buy)', baseCost:5000, costScale:1.17, unlockedAt:1500, count:0, max:0, apply(){ state.creativity += 1 } },
+        { id:'luxury-graphite', name:'Luxury Graphite', section:'Legendary', desc:'Price +50% (one-time)', baseCost:500000, costScale:1.00, unlockedAt:200000, count:0, max:1, apply(){ state.price *= 1.5 } }
+      ];
+
+      /* ======================
+         Ranks & Rank templates (unlock as you progress)
+         ====================== */
+      const ranks = [
+        { id:'rank-basic', name:'Rank: Apprentice', desc:'+3% global production per rank', baseCost:500, costScale:1.25, count:0 },
+        { id:'rank-pro', name:'Rank: Journeyman', desc:'+5% global production per rank', baseCost:2500, costScale:1.30, count:0 }
+      ];
+      const rankTemplates = [
+        { id:'rank-manager', name:'Rank: Manager', desc:'+7% global production per rank', baseCost:15000, costScale:1.32, threshold: 20000 },
+        { id:'rank-director', name:'Rank: Director', desc:'+9% global production per rank', baseCost:75000, costScale:1.33, threshold: 100000 },
+        { id:'rank-vp', name:'Rank: Vice President', desc:'+12% global production per rank', baseCost:400000, costScale:1.34, threshold: 500000 },
+        { id:'rank-ceo', name:'Rank: C.E.O', desc:'+20% global production per rank', baseCost:2000000, costScale:1.35, threshold: 2000000 },
+        { id:'rank-founder', name:'Rank: Founder', desc:'+30% global production (one-time)', baseCost:10000000, costScale:1.0, threshold: 10000000, max:1 }
+      ];
+
+      /* ======================
+         Ascension perks (buyable with ascensionPoints)
+         - persistent across ascensions
+         ====================== */
+      const ascPerks = [
+        { id:'legacy-boost-1', name:'Legacy: +10% global production', desc:'Permanent +10% global production (multiplicative)', cost:1, count:0, max:0, apply(){ state.globalProdMult *= 1.10 } },
+        { id:'legacy-click-1', name:'Legacy: +1 per click', desc:'Permanent +1 per click', cost:2, count:0, max:0, apply(){ state.perClick += 1 } },
+        { id:'legacy-funds-1', name:'Legacy: Starting Funds +100', desc:'Start each run with +100 funds', cost:2, count:0, max:0, apply(){ state.startingFunds = (state.startingFunds||0) + 100 } },
+        { id:'legacy-mult-2', name:'Legacy: +25% global production', desc:'Permanent +25% global production', cost:5, count:0, max:0, apply(){ state.globalProdMult *= 1.25 } }
+      ];
+
+      /* ======================
+         Achievements (unlocked by conditions)
+         - unlocked: boolean saved
+         ====================== */
+      const achievements = [
+        { id:'ach-prod-100', name:'100 Produced', desc:'Produce 100 total pencils', unlocked:false },
+        { id:'ach-prod-1k', name:'1,000 Produced', desc:'Produce 1,000 total pencils', unlocked:false },
+        { id:'ach-prod-100k', name:'100k Produced', desc:'Produce 100,000 total pencils', unlocked:false },
+        { id:'ach-first-worker', name:'First Worker', desc:'Hire your first worker', unlocked:false },
+        { id:'ach-first-ascend', name:'First Ascension', desc:'Ascend once', unlocked:false },
+        { id:'ach-sell-1000', name:'Sold 1,000', desc:'Sell 1,000 pencils total (cumulative)', unlocked:false }
+      ];
+      // track cumulative sells separately
+      let cumulativeSold = 0;
+
+      /* ======================
+         DOM shortcuts
+         ====================== */
+      const $ = id => document.getElementById(id);
+
+      /* ======================
+         Cost math helpers
+         ====================== */
+      function nextCost(item){ const c = item.count || 0; return item.baseCost * Math.pow(item.costScale || 1.15, c); }
+      function totalCostForN(item,n){ if (n<=0) return 0; const r = item.costScale || 1.15; const start = item.baseCost * Math.pow(r, item.count || 0); if (Math.abs(r-1) < 1e-12) return start*n; return start*(Math.pow(r,n)-1)/(r-1); }
+      function ceilMoney(x){ return Math.ceil(x*100)/100; }
+      function maxAffordable(item, resourceAmount){
+        const first = Math.ceil(nextCost(item));
+        if (first > resourceAmount) return 0;
+        let low=0, high=1;
+        while (Math.ceil(totalCostForN(item, high)) <= resourceAmount) { low = high; high *= 2; if (high > 1e9) break; }
+        while (low < high) {
+          const mid = Math.ceil((low + high + 1)/2);
+          const cost = Math.ceil(totalCostForN(item, mid));
+          if (cost <= resourceAmount) low = mid; else high = mid - 1;
+        }
+        return low;
+      }
+
+      /* ======================
+         Purchases: upgrades, ranks, ascension perks
+         ====================== */
+      function purchaseOneUpgrade(upg){
+        if (upg.max > 0 && (upg.count || 0) >= upg.max) return false;
+        const cost = ceilMoney(nextCost(upg));
+        if (state.funds + 1e-8 < cost) return false;
+        state.funds -= cost;
+        upg.count = (upg.count || 0) + 1;
+        try { upg.apply(); } catch(e){ console.error('upgrade apply error', e); }
+        return true;
+      }
+      function purchaseBulkUpgrade(upg, n){
+        if (n <= 0) return 0;
+        if (upg.max > 0) {
+          const can = upg.max - (upg.count||0);
+          if (can <= 0) return 0;
+          n = Math.min(n, can);
+        }
+        const total = ceilMoney(totalCostForN(upg,n));
+        if (state.funds + 1e-8 < total) return 0;
+        state.funds -= total;
+        upg.count = (upg.count || 0) + n;
+        for (let i=0;i<n;i++) try { upg.apply(); } catch(e){ console.error('upgrade apply error', e); }
+        return n;
+      }
+      function purchaseMaxUpgrade(upg){ const can = maxAffordable(upg, state.funds); return purchaseBulkUpgrade(upg, can); }
+
+      function purchaseOneRank(r){
+        const cost = ceilMoney(nextCost(r));
+        if (state.funds + 1e-8 < cost) return false;
+        state.funds -= cost;
+        r.count = (r.count || 0) + 1;
+        try { applyRankEffect(r); } catch(e){ console.error('rank apply error', e); }
+        return true;
+      }
+      function purchaseBulkRank(r,n){
+        if (n <= 0) return 0;
+        const total = ceilMoney(totalCostForN(r,n));
+        if (state.funds + 1e-8 < total) return 0;
+        state.funds -= total;
+        r.count = (r.count || 0) + n;
+        for (let i=0;i<n;i++) try { applyRankEffect(r); } catch(e){ console.error('rank apply error', e); }
+        return n;
+      }
+      function purchaseMaxRank(r){ const can = maxAffordable(r, state.funds); return purchaseBulkRank(r, can); }
+
+      function purchaseAscensionPerk(perk){
+        if (perk.max > 0 && (perk.count||0) >= perk.max) return false;
+        if (state.ascensionPoints < perk.cost) return false;
+        state.ascensionPoints -= perk.cost;
+        perk.count = (perk.count||0) + 1;
+        try { perk.apply(); } catch(e){ console.error('ascension perk apply error', e); }
+        return true;
+      }
+
+      /* ======================
+         Rank & Ascension effects
+         ====================== */
+      function applyRankEffect(rank) {
+        if (rank.id === 'rank-basic') state.globalProdMult *= 1.03;
+        else if (rank.id === 'rank-pro') state.globalProdMult *= 1.05;
+        else if (rank.id === 'rank-manager') state.globalProdMult *= 1.07;
+        else if (rank.id === 'rank-director') state.globalProdMult *= 1.09;
+        else if (rank.id === 'rank-vp') state.globalProdMult *= 1.12;
+        else if (rank.id === 'rank-ceo') state.globalProdMult *= 1.20;
+        else if (rank.id === 'rank-founder') state.globalProdMult *= 1.30;
+        state.perClick += 0.1;
+      }
+
+      /* ======================
+         Check/unlock rank templates by progress
+         ====================== */
+      function checkAndUnlockRanks(){
+        for (const t of rankTemplates){
+          const already = ranks.find(r => r.id === t.id);
+          if (already) continue;
+          if (state.totalPencils >= (t.threshold || 0)){
+            const newRank = { id: t.id, name: t.name, desc: t.desc, baseCost: t.baseCost, costScale: t.costScale || 1.25, count: 0, max: t.max || 0 };
+            ranks.push(newRank);
+            recentMessage('Rank unlocked: ' + t.name);
+            save(); // persist presence of new rank
+          }
+        }
+      }
+
+      /* ======================
+         Achievements checking
+         ====================== */
+      function checkAchievements(){
+        let unlockedAny = false;
+        for (const a of achievements){
+          if (a.unlocked) continue;
+          let should = false;
+          switch(a.id){
+            case 'ach-prod-100': should = state.totalPencils >= 100; break;
+            case 'ach-prod-1k': should = state.totalPencils >= 1000; break;
+            case 'ach-prod-100k': should = state.totalPencils >= 100000; break;
+            case 'ach-first-worker': should = state.workers >= 1; break;
+            case 'ach-first-ascend': should = state.ascensionCount >= 1; break;
+            case 'ach-sell-1000': should = cumulativeSold >= 1000; break;
+            default: should = false;
+          }
+          if (should){
+            a.unlocked = true;
+            unlockedAny = true;
+            recentMessage('Achievement unlocked: ' + a.name);
+            // reward small funds as a bonus
+            state.funds += 75;
+          }
+        }
+        return unlockedAny;
+      }
+
+      /* ======================
+         Ascension (prestige)
+         - 1 ascension point per 1,000,000 total produced
+         - on ascend: compute newEarned = floor(totalPencils / 1e6)
+           grant points = newEarned - state.ascensionTotalEarned
+           if >0 then increment ascensionCount, add points, set ascensionTotalEarned = newEarned
+           reset gameplay (most things) but keep ascension perks, ascensionTotalEarned and ascensionPoints
+         ====================== */
+      function tryAscend(){
+        const newEarned = Math.floor(state.totalPencils / 1000000);
+        const already = state.ascensionTotalEarned || 0;
+        const grant = newEarned - already;
+        if (grant <= 0){
+          alert('No new Ascension Points yet. Produce more total pencils to earn points (1 point per 1,000,000 total produced).');
+          return false;
+        }
+        if (!confirm('Ascend now? You will reset current run in exchange for ' + grant + ' Ascension Point(s).')) return false;
+
+        // grant and track
+        state.ascensionPoints += grant;
+        state.ascensionTotalEarned = newEarned;
+        state.ascensionCount = (state.ascensionCount || 0) + 1;
+
+        // mark achievement
+        const ach = achievements.find(a => a.id === 'ach-first-ascend');
+        if (ach && !ach.unlocked) { ach.unlocked = true; recentMessage('Achievement unlocked: ' + ach.name); }
+
+        // Reset most run-based progress but preserve ascension perks & ascension data
+        // Reset state (keep ascension fields)
+        const ascPoints = state.ascensionPoints;
+        const ascTotalEarned = state.ascensionTotalEarned;
+        const ascCount = state.ascensionCount;
+        const savedPerks = ascPerks.map(p => ({ id: p.id, count: p.count }));
+        // Reset core state
+        for (const k in state) {
+          if (k === 'ascensionPoints' || k === 'ascensionTotalEarned' || k === 'ascensionCount' || k === 'lastTick') continue;
+          if (typeof state[k] === 'number') state[k] = 0;
+          else state[k] = state[k]; // keep non-number properties
+        }
+        state.perClick = 1;
+        state.globalProdMult = 1;
+        // restore ascension meta
+        state.ascensionPoints = ascPoints;
+        state.ascensionTotalEarned = ascTotalEarned;
+        state.ascensionCount = ascCount;
+
+        // Reset upgrades & ranks counts
+        upgrades.forEach(u => u.count = 0);
+        ranks.forEach(r => r.count = 0);
+
+        // Re-apply ascension perks based on saved counts
+        ascPerks.forEach(p => {
+          p.count = 0;
+          const saved = savedPerks.find(s => s.id === p.id);
+          if (saved) {
+            p.count = saved.count || 0;
+            for (let i=0;i<p.count;i++) { try { p.apply(); } catch(e){ console.error('apply asc perk on ascend',e); } }
+          }
+        });
+
+        // Give a small starting funds amount from perks if any
+        state.funds += (state.startingFunds || 0);
+
+        recentMessage('Ascended! Gained ' + grant + ' Ascension Point(s).');
+        save();
+        renderAll();
+        return true;
+      }
+
+      /* ======================
+         Make / Sell / Worker / Sharpeners
+         ====================== */
+      function makePencil(){
+        state.inventory += state.perClick;
+        state.pencils += state.perClick;
+        state.totalPencils += state.perClick;
+      }
+      function sellInventory(which='all'){
+        let sold = 0;
+        if (which === 'half') sold = Math.floor(state.inventory/2);
+        else sold = Math.floor(state.inventory);
+        if (sold <= 0) return 0;
+        const revenue = sold * state.price * state.demand;
+        state.funds += revenue;
+        state.inventory -= sold;
+        cumulativeSold += sold;
+        return revenue;
+      }
+      function buyWorker(){
+        const cost = 10 * Math.pow(1.15, state.workers);
+        if (state.funds + 1e-8 >= cost) { state.funds -= cost; state.workers += 1; return true; }
+        return false;
+      }
+      function buySharpener(){
+        const cost = 75 * Math.pow(1.2, state.sharpeners);
+        if (state.funds + 1e-8 >= cost) { state.funds -= cost; state.sharpeners += 1; return true; }
+        return false;
+      }
+
+      /* ======================
+         Rendering / UI helpers
+         ====================== */
+      function formatMoney(m){ return parseFloat(m).toFixed(2); }
+
+      function renderResources(){
+        $('pencils').textContent = Math.floor(state.pencils).toLocaleString();
+        $('inventory').textContent = Math.floor(state.inventory).toLocaleString();
+        $('funds').textContent = formatMoney(state.funds);
+        $('per-sec').textContent = (state.perSec || 0).toFixed(1);
+        $('total-pencils').textContent = Math.floor(state.totalPencils).toLocaleString();
+        $('total-produced-display').textContent = Math.floor(state.totalPencils).toLocaleString();
+        $('workers').textContent = state.workers;
+        $('sharpeners').textContent = state.sharpeners;
+        $('creativity').textContent = Math.floor(state.creativity || 0);
+        $('reputation').textContent = Math.floor(state.reputation || 0);
+        $('asc-points-display').textContent = state.ascensionPoints;
+        $('ascension-points').textContent = state.ascensionPoints;
+      }
+
+      function renderUpgrades(){
+        const container = $('upgrades');
+        container.innerHTML = '';
+        const sectionsOrder = ['Starter','Manufacturing','Automation','Business','Research','Legendary'];
+        const sections = {};
+        upgrades.forEach(u => { if (!sections[u.section]) sections[u.section]=[]; sections[u.section].push(u); });
+
+        sectionsOrder.forEach(sectionName => {
+          const list = sections[sectionName];
+          if (!list) return;
+          const header = document.createElement('div'); header.className = 'section-title'; header.textContent = sectionName;
+          container.appendChild(header);
+          list.forEach(u => {
+            const unlocked = state.totalPencils >= (u.unlockedAt || 0);
+            const div = document.createElement('div'); div.className = 'upgrade' + (unlocked ? '' : ' locked');
+
+            const left = document.createElement('div'); left.style.maxWidth = '260px';
+            const title = document.createElement('strong'); title.textContent = u.name;
+            const owned = document.createElement('span'); owned.style.fontSize='11px'; owned.style.color='#666'; owned.style.marginLeft='8px';
+            owned.textContent = '(' + (u.count||0) + ' owned)';
+            left.appendChild(title); left.appendChild(owned);
+            const desc = document.createElement('div'); desc.style.fontSize='12px'; desc.style.color='#666'; desc.style.marginTop='6px'; desc.textContent = u.desc; left.appendChild(desc);
+            const meta = document.createElement('div'); meta.style.fontSize='11px'; meta.style.color='#888'; meta.style.marginTop='6px'; meta.textContent = 'Unlock at ' + (u.unlockedAt || 0).toLocaleString(); left.appendChild(meta);
+            div.appendChild(left);
+
+            const controls = document.createElement('div'); controls.className = 'upgrade-controls';
+            const next = Math.ceil(nextCost(u));
+            const costLabel = '$' + ceilMoney(next).toFixed(2);
+            const costSpan = document.createElement('div'); costSpan.style.fontSize='11px'; costSpan.style.color='#222'; costSpan.textContent = costLabel; controls.appendChild(costSpan);
+
+            const buyBtn = document.createElement('button'); buyBtn.className='retro-btn'; buyBtn.textContent='Buy';
+            buyBtn.disabled = (!unlocked) || (u.max>0 && (u.count||0) >= u.max) || (state.funds + 1e-8 < ceilMoney(next));
+            buyBtn.addEventListener('click', ()=>{ if (purchaseOneUpgrade(u)) renderAll(); else console.info('Buy failed for', u.id); });
+            controls.appendChild(buyBtn);
+
+            const bulk = $('bulk-qty').value;
+            const bulkBtn = document.createElement('button'); bulkBtn.className = 'buy-max';
+            if (bulk === 'max') {
+              const afford = maxAffordable(u, state.funds);
+              if (afford > 0 && !(u.max>0 && (u.count||0) >= u.max)) {
+                const total = ceilMoney(totalCostForN(u, afford)).toFixed(2);
+                bulkBtn.textContent = 'Max ('+afford+') — $' + total;
+                bulkBtn.disabled = !unlocked;
+              } else { bulkBtn.textContent = 'Max'; bulkBtn.disabled = true; }
+              bulkBtn.addEventListener('click', () => { const n = purchaseMaxUpgrade(u); if (n>0) renderAll(); else console.info('Max buy failed', u.id); });
+            } else {
+              const qty = parseInt(bulk,10) || 1;
+              bulkBtn.textContent = 'Buy ' + qty;
+              bulkBtn.disabled = !unlocked;
+              bulkBtn.addEventListener('click', () => {
+                const bought = purchaseBulkUpgrade(u, qty);
+                if (bought>0) renderAll(); else console.info('Bulk buy failed', u.id);
+              });
+            }
+            controls.appendChild(bulkBtn);
+
+            div.appendChild(controls);
+            container.appendChild(div);
+          });
+        });
+      }
+
+      function renderRanks(){
+        const container = $('ranks');
+        container.innerHTML = '';
+        ranks.forEach(r => {
+          const div = document.createElement('div'); div.className = 'rank';
+          const left = document.createElement('div'); left.className = 'rank-left';
+          const title = document.createElement('strong'); title.textContent = r.name + ' ';
+          const owned = document.createElement('span'); owned.style.fontSize='11px'; owned.style.color='#666'; owned.textContent = '(' + (r.count||0) + ')';
+          title.appendChild(owned);
+          left.appendChild(title);
+          const desc = document.createElement('div'); desc.style.fontSize='12px'; desc.style.color='#666'; desc.textContent = r.desc; left.appendChild(desc);
+          div.appendChild(left);
+
+          const ctr = document.createElement('div'); ctr.className = 'rank-controls';
+          const next = Math.ceil(nextCost(r));
+          const costSpan = document.createElement('div'); costSpan.style.fontSize='12px'; costSpan.textContent = '$' + ceilMoney(next).toFixed(2); ctr.appendChild(costSpan);
+
+          const buyBtn = document.createElement('button'); buyBtn.className = 'retro-btn'; buyBtn.textContent = 'Buy';
+          buyBtn.disabled = (state.funds + 1e-8 < ceilMoney(next));
+          buyBtn.addEventListener('click', ()=> { if (purchaseOneRank(r)) { renderAll(); } else console.info('Not enough funds for rank'); });
+          ctr.appendChild(buyBtn);
+
+          const bulk = $('bulk-qty').value;
+          const bulkBtn = document.createElement('button'); bulkBtn.className = 'buy-max';
+          if (bulk === 'max') {
+            const afford = maxAffordable(r, state.funds);
+            if (afford > 0) bulkBtn.textContent = 'Max ('+afford+')';
+            else { bulkBtn.textContent = 'Max'; bulkBtn.disabled = true; }
+            bulkBtn.addEventListener('click', ()=> { const n = purchaseMaxRank(r); if (n>0) renderAll(); else console.info('Max rank buy failed'); });
+          } else {
+            const qty = parseInt(bulk,10) || 1;
+            bulkBtn.textContent = 'Buy ' + qty;
+            bulkBtn.addEventListener('click', ()=> { const n = purchaseBulkRank(r, qty); if (n>0) renderAll(); else console.info('Bulk rank buy failed'); });
+          }
+          ctr.appendChild(bulkBtn);
+
+          div.appendChild(ctr);
+          container.appendChild(div);
+        });
+      }
+
+      function renderAscPerks(){
+        const container = $('asc-perks');
+        container.innerHTML = '';
+        ascPerks.forEach(p => {
+          const row = document.createElement('div'); row.style.display='flex'; row.style.justifyContent='space-between'; row.style.alignItems='center'; row.style.padding='6px 0';
+          const left = document.createElement('div'); left.innerHTML = '<strong>' + p.name + '</strong><div style="font-size:12px;color:#666">' + p.desc + '</div>';
+          const right = document.createElement('div');
+          const cost = document.createElement('div'); cost.style.fontSize='13px'; cost.style.marginBottom='6px'; cost.textContent = p.cost + ' pts';
+          const btn = document.createElement('button'); btn.className='retro-btn'; btn.textContent='Buy';
+          btn.disabled = state.ascensionPoints < p.cost || (p.max>0 && (p.count||0)>=p.max);
+          btn.addEventListener('click', ()=> { if (purchaseAscensionPerk(p)) { renderAll(); } else alert('Not enough Ascension Points'); });
+          right.appendChild(cost); right.appendChild(btn);
+          row.appendChild(left); row.appendChild(right);
+          container.appendChild(row);
+        });
+      }
+
+      function renderAchievements(){
+        const container = $('achievements');
+        container.innerHTML = '';
+        for (const a of achievements){
+          const row = document.createElement('div'); row.className = 'ach' + (a.unlocked ? ' unlocked' : '');
+          const badge = document.createElement('div'); badge.className = 'badge'; badge.textContent = a.unlocked ? '✓' : '•';
+          const text = document.createElement('div'); text.innerHTML = '<strong>' + a.name + '</strong><div style="font-size:12px;color:#666">' + a.desc + '</div>';
+          row.appendChild(badge); row.appendChild(text);
+          container.appendChild(row);
+        }
+      }
+
+      function updateAscensionProgressUI(){
+        // progress to next ascension point
+        const alreadyPoints = state.ascensionTotalEarned || 0;
+        const nextThreshold = (alreadyPoints + 1) * 1000000;
+        const have = state.totalPencils - (alreadyPoints * 1000000);
+        const pct = Math.max(0, Math.min(1, have / 1000000));
+        $('asc-progress-bar').style.width = Math.round(pct*100) + '%';
+        $('asc-progress-text').textContent = Math.floor(Math.max(0, have)) + ' / 1,000,000 towards next ascension point';
+      }
+
+      function recentMessage(msg){
+        const el = $('floating-message');
+        el.textContent = msg;
+        el.style.opacity = 1;
+      }
+
+      function renderAll(){
+        renderResources();
+        renderUpgrades();
+        renderRanks();
+        renderAscPerks();
+        renderAchievements();
+        updateAscensionProgressUI();
+        save();
+      }
+
+      /* ======================
+         Saving & loading (include ascension & achievements)
+         ====================== */
+      function save(){
+        try {
+          const payload = {
+            state: {
+              pencils: state.pencils,
+              inventory: state.inventory,
+              totalPencils: state.totalPencils,
+              funds: state.funds,
+              price: state.price,
+              demand: state.demand,
+              perClick: state.perClick,
+              workers: state.workers,
+              sharpeners: state.sharpeners,
+              creativity: state.creativity,
+              reputation: state.reputation,
+              globalProdMult: state.globalProdMult,
+              ascensionCount: state.ascensionCount,
+              ascensionPoints: state.ascensionPoints,
+              ascensionTotalEarned: state.ascensionTotalEarned,
+              startingFunds: state.startingFunds || 0
+            },
+            upgrades: upgrades.map(u => ({ id:u.id, count:u.count || 0 })),
+            ranks: ranks.map(r => ({ id:r.id, count:r.count || 0 })),
+            ascPerks: ascPerks.map(p => ({ id:p.id, count:p.count || 0 })),
+            achievements: achievements.map(a => ({ id:a.id, unlocked:a.unlocked || false })),
+            cumulativeSold: cumulativeSold
+          };
+          localStorage.setItem('pencilsmith-asc-save', JSON.stringify(payload));
+        } catch (e) { console.error('save failed', e); }
+      }
+
+      function load(){
+        try {
+          const raw = localStorage.getItem('pencilsmith-asc-save');
+          if (!raw) return;
+          const data = JSON.parse(raw);
+          if (data.state) Object.assign(state, data.state);
+          if (data.upgrades) {
+            data.upgrades.forEach(s => {
+              const u = upgrades.find(x => x.id === s.id);
+              if (u) { u.count = s.count || 0; for (let i=0;i<(u.count||0);i++) try{ u.apply(); } catch(e){console.error(e);} }
+            });
+          }
+          if (data.ranks) {
+            // reapply ranks (reset multiplier then apply)
+            state.globalProdMult = 1;
+            ranks.forEach(r => r.count = 0);
+            data.ranks.forEach(s => {
+              let r = ranks.find(x => x.id === s.id);
+              if (!r) {
+                // if rank came from templates, clone it
+                const t = rankTemplates.find(x => x.id === s.id);
+                if (t) { r = { id:t.id, name:t.name, desc:t.desc, baseCost:t.baseCost, costScale:t.costScale||1.25, count:0, max: t.max||0 }; ranks.push(r); }
+                else return;
+              }
+              r.count = s.count || 0;
+              for (let i=0;i<r.count;i++) try{ applyRankEffect(r); } catch(e){console.error(e);}
+            });
+          }
+          if (data.ascPerks) {
+            data.ascPerks.forEach(s => {
+              const p = ascPerks.find(x => x.id === s.id);
+              if (p) { p.count = s.count || 0; for (let i=0;i<(p.count||0);i++) try{ p.apply(); } catch(e){console.error(e);} }
+            });
+          }
+          if (data.achievements) {
+            data.achievements.forEach(a => {
+              const aa = achievements.find(x => x.id === a.id);
+              if (aa) aa.unlocked = a.unlocked || false;
+            });
+          }
+          if (typeof data.cumulativeSold === 'number') cumulativeSold = data.cumulativeSold;
+        } catch (e) { console.error('load failed', e); }
+      }
+
+      /* ======================
+         Flying pencils visuals (non-blocking)
+         ====================== */
+      function initFlyingPencils(){
+        const sky = document.getElementById('pencil-sky');
+        const proto = document.getElementById('prototype-pencil');
+        if (!sky || !proto) return;
+        proto.style.display = 'none';
+        const count = 6;
+        const rows = Math.min(3, Math.ceil(count/2));
+        for (let i=0;i<count;i++){
+          const clone = proto.cloneNode(true);
+          clone.removeAttribute('id');
+          clone.style.display = 'block';
+          const wrapper = document.createElement('div');
+          wrapper.className = 'pencil-instance';
+          const trail = clone.cloneNode(true);
+          trail.classList.add('trail');
+          trail.style.opacity = (0.45 - i*0.04).toString();
+          wrapper.appendChild(trail);
+          wrapper.appendChild(clone);
+          const baseDuration = 6 + Math.random()*4;
+          const stretch = (i % 3) * 1.2;
+          const duration = baseDuration + stretch;
+          const delay = -(Math.random()*duration);
+          wrapper.style.animation = `pencilFly ${duration}s linear ${delay}s infinite`;
+          const row = i % rows;
+          const rowHeight = (sky.clientHeight - 40) / rows;
+          const jitter = (Math.random()-0.5) * 20;
+          wrapper.style.top = Math.max(6, Math.round(10 + row * rowHeight + jitter)) + 'px';
+          wrapper.style.left = '-30%';
+          wrapper.style.zIndex = (100 - i).toString();
+          sky.appendChild(wrapper);
+        }
+      }
+
+      /* ======================
+         UI wiring
+         ====================== */
+      function setupUI(){
+        $('make-pencil').addEventListener('click', ()=>{ makePencil(); renderAll(); });
+        $('sell-pencils').addEventListener('click', ()=> { const rev = sellInventory('all'); if (rev>0) console.info('Sold for $' + rev.toFixed(2)); renderAll(); });
+        $('sell-half').addEventListener('click', ()=> { const rev = sellInventory('half'); if (rev>0) console.info('Sold half for $' + rev.toFixed(2)); renderAll(); });
+        $('buy-worker').addEventListener('click', ()=> { if (buyWorker()) renderAll(); else console.info('Not enough funds for worker'); });
+        $('buy-sharpener').addEventListener('click', ()=> { if (buySharpener()) renderAll(); else console.info('Not enough funds for sharpener'); });
+        $('ascend-btn').addEventListener('click', ()=> { tryAscend(); });
+        $('reset').addEventListener('click', ()=> { if (!confirm('Reset game and clear local save?')) return; localStorage.removeItem('pencilsmith-asc-save'); location.reload(); });
+        $('bulk-qty').addEventListener('change', ()=> { renderUpgrades(); renderRanks(); renderAscPerks(); });
+      }
+
+      /* ======================
+         Main loop
+         ====================== */
+      function gameTick(deltaSec){
+        const baseWorkerRate = 1;
+        const workerBoost = state.workerBoost || 1;
+        const globalMult = state.globalProdMult || 1;
+        const workerP = state.workers * baseWorkerRate * workerBoost * globalMult;
+        const sharpBase = 5;
+        const sharpPower = state.sharpenerPowerMultiplier || 1;
+        const sharpP = state.sharpeners * sharpBase * sharpPower * globalMult;
+        const automationBonus = state.automation ? sharpP * 0.5 : 0;
+        const perSec = (workerP + sharpP + automationBonus) * (state.globalProdMult || 1);
+        state.perSec = perSec;
+        const produced = perSec * deltaSec;
+        if (produced > 0){
+          state.inventory += produced;
+          state.pencils += produced;
+          state.totalPencils += produced;
+        }
+        // design-studio small passive funds from creativity
+        const ds = upgrades.find(u => u.id === 'design-studio');
+        if (ds && (ds.count || 0) > 0) {
+          state.funds += 0.02 * (ds.count || 0) * deltaSec;
+        }
+
+        // unlock dynamic ranks
+        checkAndUnlockRanks();
+
+        // achievements check
+        checkAchievements();
+      }
+
+      let last = Date.now();
+      function loop(){
+        const now = Date.now();
+        const delta = (now - last) / 1000;
+        last = now;
+        gameTick(delta);
+        renderAll();
+        requestAnimationFrame(loop);
+      }
+
+      /* ======================
+         Expose debug helpers
+         ====================== */
+      window._pencilsmith = {
+        state,
+        upgrades,
+        ranks,
+        ascPerks,
+        achievements,
+        purchaseUpgradeById(id){ const u = upgrades.find(x=>x.id===id); return u ? purchaseOneUpgrade(u) : false; },
+        purchaseRankById(id){ const r = ranks.find(x=>x.id===id); return r ? purchaseOneRank(r) : false; },
+        purchaseAscPerkById(id){ const p = ascPerks.find(x=>x.id===id); return p ? purchaseAscensionPerk(p) : false; },
+        ascendNow(){ return tryAscend(); },
+        unlockRankTemplatesNow(){ checkAndUnlockRanks(); renderAll(); return ranks.map(r=>r.id); }
+      };
+
+      /* ======================
+         Init
+         ====================== */
+      function init(){
+        setupUI();
+        load();
+        initFlyingPencils();
+        startFloatingRotation();
+        last = Date.now();
+        renderAll();
+        requestAnimationFrame(loop);
+      }
+
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+      else init();
+
+      /* ======================
+         Floating message rotation (start function)
+         ====================== */
+      function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+      const recentChanges = ['Classic UI restored','Flying pencils re-enabled','Ranks & Ascension added'];
+      const randomWords = ['retro','pencil','graphite','studio','factory','automation','click','upgrade','legendary','starter','manufacturing','research','business','marketing','creative','reputation','funds','inventory','sky','flight'];
+      const sentenceTemplates = ['New: {change}.','Tip: try the {word} upgrade!','Reminder: total produced unlocks upgrades and ranks.'];
+
+      function generateMessage(){
+        const r = Math.random();
+        if (r < 0.45 && recentChanges.length) return pick(recentChanges);
+        if (r < 0.8) {
+          const tpl = pick(sentenceTemplates);
+          return tpl.replace(/\{change\}/g, pick(recentChanges)).replace(/\{word\}/g, pick(randomWords));
+        }
+        const count = 2 + Math.floor(Math.random()*4);
+        const words = [];
+        for (let i=0;i<count;i++) words.push(pick(randomWords));
+        return words.map(w => w).join(' ') + '.';
+      }
+
+      function updateFloatingMessage() {
+        const el = $('floating-message');
+        if (!el) return;
+        if (el.dataset.paused === '1') return;
+        const msg = generateMessage();
+        el.style.opacity = 0;
+        setTimeout(()=>{ el.textContent = msg; el.style.transform = 'translateX(-6px)'; el.style.opacity = 1; setTimeout(()=>el.style.transform='translateX(0)',40); }, 180);
+      }
+      let rotateTimer = null;
+      function startFloatingRotation(){
+        if (rotateTimer) clearInterval(rotateTimer);
+        updateFloatingMessage();
+        rotateTimer = setInterval(()=> updateFloatingMessage(), 3600 + Math.floor(Math.random()*2400));
+      }
+      // pause/resume by clicking the floating message
+      (function attachFloatingInteractions(){
+        const el = $('floating-message');
+        if (!el) return;
+        el.addEventListener('click', ()=> {
+          if (el.dataset.paused === '1'){ el.dataset.paused = '0'; startFloatingRotation(); el.classList.remove('paused'); }
+          else { el.dataset.paused = '1'; if (rotateTimer) { clearInterval(rotateTimer); rotateTimer = null; } el.classList.add('paused'); }
+        });
+        el.addEventListener('mouseenter', ()=> { el.dataset._hoverPaused = el.dataset.paused || '0'; el.dataset.paused = '1'; if (rotateTimer) { clearInterval(rotateTimer); rotateTimer = null; } el.classList.add('paused'); });
+        el.addEventListener('mouseleave', ()=> { el.dataset.paused = el.dataset._hoverPaused || '0'; if (el.dataset.paused === '0' && !rotateTimer) startFloatingRotation(); if (el.classList.contains('paused') && el.dataset.paused==='0') el.classList.remove('paused'); });
+      })();
+
+    })();
+  </script>
+</body>
+</html>
